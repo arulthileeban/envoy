@@ -42,10 +42,11 @@ enum class OcspStapleAction { Staple, NoStaple, Fail, ClientNotCapable };
 
 class ServerContextImpl : public ContextImpl, public Envoy::Ssl::ServerContext {
 public:
-  ServerContextImpl(Stats::Scope& scope, const Envoy::Ssl::ServerContextConfig& config,
-                    const std::vector<std::string>& server_names,
-                    Server::Configuration::CommonFactoryContext& factory_context,
-                    Ssl::ContextAdditionalInitFunc additional_init);
+  static absl::StatusOr<std::unique_ptr<ServerContextImpl>>
+  create(Stats::Scope& scope, const Envoy::Ssl::ServerContextConfig& config,
+         const std::vector<std::string>& server_names,
+         Server::Configuration::CommonFactoryContext& factory_context,
+         Ssl::ContextAdditionalInitFunc additional_init);
 
   // Select the TLS certificate context in SSL_CTX_set_select_certificate_cb() callback with
   // ClientHello details. This is made public for use by custom TLS extensions who want to
@@ -60,6 +61,11 @@ public:
                                                                      bool* cert_matched_sni);
 
 private:
+  ServerContextImpl(Stats::Scope& scope, const Envoy::Ssl::ServerContextConfig& config,
+                    const std::vector<std::string>& server_names,
+                    Server::Configuration::CommonFactoryContext& factory_context,
+                    Ssl::ContextAdditionalInitFunc additional_init, absl::Status& creation_status);
+
   // Currently, at most one certificate of a given key type may be specified for each exact
   // server name or wildcard domain name.
   using PkeyTypesMap = absl::flat_hash_map<int, std::reference_wrapper<Ssl::TlsContext>>;
@@ -80,7 +86,8 @@ private:
   bool isClientOcspCapable(const SSL_CLIENT_HELLO* ssl_client_hello);
   OcspStapleAction ocspStapleAction(const Ssl::TlsContext& ctx, bool client_ocsp_capable);
 
-  SessionContextID generateHashForSessionContextId(const std::vector<std::string>& server_names);
+  absl::StatusOr<SessionContextID>
+  generateHashForSessionContextId(const std::vector<std::string>& server_names);
 
   const std::vector<Envoy::Ssl::ServerContextConfig::SessionTicketKey> session_ticket_keys_;
   const Ssl::ServerContextConfig::OcspStaplePolicy ocsp_staple_policy_;
@@ -92,14 +99,11 @@ private:
 class ServerContextFactoryImpl : public ServerContextFactory {
 public:
   std::string name() const override { return "envoy.ssl.server_context_factory.default"; }
-  Ssl::ServerContextSharedPtr
+  absl::StatusOr<Ssl::ServerContextSharedPtr>
   createServerContext(Stats::Scope& scope, const Envoy::Ssl::ServerContextConfig& config,
                       const std::vector<std::string>& server_names,
                       Server::Configuration::CommonFactoryContext& factory_context,
-                      Ssl::ContextAdditionalInitFunc additional_init) override {
-    return std::make_shared<ServerContextImpl>(scope, config, server_names, factory_context,
-                                               std::move(additional_init));
-  }
+                      Ssl::ContextAdditionalInitFunc additional_init) override;
 };
 
 DECLARE_FACTORY(ServerContextFactoryImpl);
