@@ -374,6 +374,28 @@ Utility::parseCookies(const RequestHeaderMap& headers,
   return cookies;
 }
 
+void Utility::removeCookie(RequestHeaderMap& headers, const std::string& cookie_key) {
+  const auto cookie_header = Http::Headers::get().Cookie;
+  if (cookie_header.get().empty()) {
+    return;
+  }
+
+  std::string new_cookie_value;
+  forEachCookie(headers, cookie_header,
+                [&cookie_key, &new_cookie_value](absl::string_view k, absl::string_view v) -> bool {
+                  if (cookie_key != k) {
+                    new_cookie_value += absl::StrCat(k, "=", v, "; ");
+                  }
+                  return true;
+                });
+
+  if (!new_cookie_value.empty()) {
+    headers.setCopy(Http::Headers::get().Cookie, new_cookie_value);
+  } else {
+    headers.remove(Http::Headers::get().Cookie);
+  }
+}
+
 bool Utility::Url::containsFragment() { return (component_bitmap_ & (1 << UcFragment)); }
 
 bool Utility::Url::containsUserinfo() { return (component_bitmap_ & (1 << UcUserinfo)); }

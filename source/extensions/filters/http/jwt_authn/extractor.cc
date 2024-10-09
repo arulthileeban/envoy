@@ -129,12 +129,16 @@ private:
 // The JwtLocation for cookie extraction.
 class JwtCookieLocation : public JwtLocationBase {
 public:
-  JwtCookieLocation(const std::string& token, const JwtIssuerChecker& issuer_checker)
-      : JwtLocationBase(token, issuer_checker) {}
+  JwtCookieLocation(const std::string& token, const JwtIssuerChecker& issuer_checker,
+                    const std::string& cookie_key)
+      : JwtLocationBase(token, issuer_checker), cookie_key_(cookie_key) {}
 
-  void removeJwt(Http::RequestHeaderMap&) const override {
-    // TODO(theshubhamp): remove JWT from cookies.
+  void removeJwt(Http::RequestHeaderMap& headers) const override {
+
+    std::cout << "Removing JWT cookie";
+    Http::Utility::removeCookie(headers, cookie_key_);
   }
+  const std::string& cookie_key_;
 };
 
 /**
@@ -312,7 +316,7 @@ ExtractorImpl::extract(const Http::RequestHeaderMap& headers) const {
       const auto& it = cookies.find(cookie_key);
       if (it != cookies.end()) {
         tokens.push_back(
-            std::make_unique<const JwtCookieLocation>(it->second, location_spec.issuer_checker_));
+            std::make_unique<const JwtCookieLocation>(it->second, location_spec.issuer_checker_, cookie_key));
       }
     }
   }

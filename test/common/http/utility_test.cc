@@ -983,6 +983,33 @@ TEST(HttpUtility, TestMakeSetCookieValue) {
                                         ref_attributes));
 }
 
+TEST(HttpUtility, TestRemoveCookie) {
+  TestRequestHeaderMapImpl headers{
+      {"someheader", "10.0.0.1"},
+      {"cookie", "somekey=\"somevalue; someotherkey=someothervalue; finalkey=finalvalue"},
+      {"cookie", "key2=value2; key2=\"value3"}};
+
+  const auto& cookies = Utility::parseCookies(headers);
+  std::string target_key1{"someotherkey"};
+  std::string target_key2{"key2"};
+  std::string non_target_key1{"somekey"};
+  std::string non_target_key2{"finalkey"};
+
+  EXPECT_NE(Utility::parseCookieValue(headers, target_key1),"");
+  EXPECT_NE(Utility::parseCookieValue(headers, target_key2),"");
+  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key1),"");
+  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key2),"");
+
+  Utility::removeCookie(headers, target_key1);
+  Utility::removeCookie(headers, target_key2);
+  EXPECT_EQ(Utility::parseCookieValue(headers, target_key1),"");
+  EXPECT_EQ(Utility::parseCookieValue(headers, target_key2),"");
+  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key1),"\"somevalue");
+  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key2),"finalvalue");
+
+
+}
+
 TEST(HttpUtility, SendLocalReply) {
   MockStreamDecoderFilterCallbacks callbacks;
   bool is_reset = false;
