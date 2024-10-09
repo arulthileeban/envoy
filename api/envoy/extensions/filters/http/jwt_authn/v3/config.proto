@@ -189,9 +189,8 @@ message JwtProvider {
     config.core.v3.DataSource local_jwks = 4;
   }
 
-  // If false, the JWT is removed in the request after a success verification. If true, the JWT is
-  // not removed in the request. Default value is false.
-  // caveat: only works for from_header/from_params & has no effect for JWTs extracted through from_cookies.
+  // If false, the JWT is removed in the request(headers/params/cookies) after a success verification.
+  // If true, the JWT is not removed in the request. Default value is false.
   bool forward = 5;
 
   // Two fields below define where to extract the JWT from an HTTP request.

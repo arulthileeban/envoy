@@ -375,22 +375,43 @@ TEST_F(ExtractorTest, TestCookieToken) {
   EXPECT_EQ(tokens[0]->token(), "token-cookie-value");
   EXPECT_TRUE(tokens[0]->isIssuerAllowed("issuer9"));
   EXPECT_FALSE(tokens[0]->isIssuerAllowed("issuer10"));
-  tokens[0]->removeJwt(headers);
-  EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-value"), "");
 
   // only issuer9 has specified "token-cookie-2" cookie location.
   EXPECT_EQ(tokens[1]->token(), "token-cookie-value-2");
   EXPECT_TRUE(tokens[1]->isIssuerAllowed("issuer9"));
   EXPECT_FALSE(tokens[1]->isIssuerAllowed("issuer10"));
-  tokens[1]->removeJwt(headers);
-  EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-value-2"), "");
 
   // only issuer10 has specified "token-cookie-3" cookie location.
   EXPECT_EQ(tokens[2]->token(), "token-cookie-value-3");
   EXPECT_TRUE(tokens[2]->isIssuerAllowed("issuer10"));
   EXPECT_FALSE(tokens[2]->isIssuerAllowed("issuer9"));
-  tokens[2]->removeJwt(headers);
-  EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-value-3"), "");
+
+  {
+    TestScopedRuntime scoped_runtime;
+    scoped_runtime.mergeValues(
+        {{"envoy.reloadable_features.jwt_authn_remove_jwt_from_cookie", "false"}});
+
+    tokens[0]->removeJwt(headers);
+    tokens[1]->removeJwt(headers);
+    tokens[2]->removeJwt(headers);
+    Http::Utility::QueryParamsMulti query_params =
+        Http::Utility::QueryParamsMulti::parseAndDecodeQueryString(headers.getPathValue());
+    EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie"), "token-cookie-value");
+    EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-2"), "token-cookie-value-2");
+    EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-3"), "token-cookie-value-3");
+  }
+  {
+    TestScopedRuntime scoped_runtime;
+    scoped_runtime.mergeValues(
+        {{"envoy.reloadable_features.jwt_authn_remove_jwt_from_cookie", "true"}});
+
+    tokens[0]->removeJwt(headers);
+    tokens[1]->removeJwt(headers);
+    tokens[2]->removeJwt(headers);
+    EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie"), "");
+    EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-2"), "");
+    EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-3"), "");
+  }
 }
 
 // Test extracting token from a cookie, but not from default location

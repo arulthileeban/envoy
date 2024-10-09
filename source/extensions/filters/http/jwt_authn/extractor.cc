@@ -134,9 +134,10 @@ public:
       : JwtLocationBase(token, issuer_checker), cookie_key_(cookie_key) {}
 
   void removeJwt(Http::RequestHeaderMap& headers) const override {
-
-    std::cout << "Removing JWT cookie";
-    Http::Utility::removeCookie(headers, cookie_key_);
+    if (Runtime::runtimeFeatureEnabled(
+            "envoy.reloadable_features.jwt_authn_remove_jwt_from_cookie")) {
+      Http::Utility::removeCookie(headers, cookie_key_);
+    }
   }
   const std::string& cookie_key_;
 };
