@@ -315,8 +315,8 @@ ExtractorImpl::extract(const Http::RequestHeaderMap& headers) const {
       const auto& location_spec = location_it.second;
       const auto& it = cookies.find(cookie_key);
       if (it != cookies.end()) {
-        tokens.push_back(
-            std::make_unique<const JwtCookieLocation>(it->second, location_spec.issuer_checker_, cookie_key));
+        tokens.push_back(std::make_unique<const JwtCookieLocation>(
+            it->second, location_spec.issuer_checker_, cookie_key));
       }
     }
   }

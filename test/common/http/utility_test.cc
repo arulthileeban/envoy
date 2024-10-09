@@ -995,19 +995,17 @@ TEST(HttpUtility, TestRemoveCookie) {
   std::string non_target_key1{"somekey"};
   std::string non_target_key2{"finalkey"};
 
-  EXPECT_NE(Utility::parseCookieValue(headers, target_key1),"");
-  EXPECT_NE(Utility::parseCookieValue(headers, target_key2),"");
-  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key1),"");
-  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key2),"");
+  EXPECT_NE(Utility::parseCookieValue(headers, target_key1), "");
+  EXPECT_NE(Utility::parseCookieValue(headers, target_key2), "");
+  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key1), "");
+  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key2), "");
 
   Utility::removeCookie(headers, target_key1);
   Utility::removeCookie(headers, target_key2);
-  EXPECT_EQ(Utility::parseCookieValue(headers, target_key1),"");
-  EXPECT_EQ(Utility::parseCookieValue(headers, target_key2),"");
-  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key1),"\"somevalue");
-  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key2),"finalvalue");
-
-
+  EXPECT_EQ(Utility::parseCookieValue(headers, target_key1), "");
+  EXPECT_EQ(Utility::parseCookieValue(headers, target_key2), "");
+  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key1), "\"somevalue");
+  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key2), "finalvalue");
 }
 
 TEST(HttpUtility, SendLocalReply) {
