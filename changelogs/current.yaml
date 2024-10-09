@@ -124,6 +124,13 @@ minor_behavior_changes:
   change: |
     Sanitize SNI for potential log injection. The invalid character will be replaced by ``_`` with an ``invalid:`` marker. If runtime
     flag ``envoy.reloadable_features.sanitize_sni_in_access_log`` is set to ``false``, the sanitize behavior is disabled.
+- area: jwt_authn
+  change: |
+    Changes the behavior of the
+    :ref:`forward <envoy_v3_api_field_extensions.filters.http.jwt_authn.v3.JwtProvider.forward>`
+    config. Previously, the config only removes JWT if set in headers and params. With this addition, the config can also be
+    used to remove JWT set in cookies. This behavior can be reverted by setting the runtime guard
+    ``envoy.reloadable_features.jwt_authn_remove_jwt_from_cookie`` to ``false``.
 
 bug_fixes:
 # *Changes expected to improve the state of the world and are unlikely to have negative effects*
