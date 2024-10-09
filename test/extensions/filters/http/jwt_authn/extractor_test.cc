@@ -376,18 +376,21 @@ TEST_F(ExtractorTest, TestCookieToken) {
   EXPECT_TRUE(tokens[0]->isIssuerAllowed("issuer9"));
   EXPECT_FALSE(tokens[0]->isIssuerAllowed("issuer10"));
   tokens[0]->removeJwt(headers);
+  EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-value"), "");
 
   // only issuer9 has specified "token-cookie-2" cookie location.
   EXPECT_EQ(tokens[1]->token(), "token-cookie-value-2");
   EXPECT_TRUE(tokens[1]->isIssuerAllowed("issuer9"));
   EXPECT_FALSE(tokens[1]->isIssuerAllowed("issuer10"));
   tokens[1]->removeJwt(headers);
+  EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-value-2"), "");
 
   // only issuer10 has specified "token-cookie-3" cookie location.
   EXPECT_EQ(tokens[2]->token(), "token-cookie-value-3");
   EXPECT_TRUE(tokens[2]->isIssuerAllowed("issuer10"));
   EXPECT_FALSE(tokens[2]->isIssuerAllowed("issuer9"));
   tokens[2]->removeJwt(headers);
+  EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-value-3"), "");
 }
 
 // Test extracting token from a cookie, but not from default location
