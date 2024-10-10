@@ -253,6 +253,11 @@ parseCookies(const RequestHeaderMap& headers,
  **/
 absl::flat_hash_map<std::string, std::string> parseCookies(const RequestHeaderMap& headers);
 
+/**
+ * Remove a particular cookie from the header.
+ * @param headers supplies the headers to remove the cookie from.
+ * @param cookie_key supplies the cookie key to remove.
+ **/
 void removeCookie(RequestHeaderMap& headers, const std::string& cookie_key);
 
 /**

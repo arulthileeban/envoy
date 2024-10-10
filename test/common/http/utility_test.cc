@@ -1006,6 +1006,14 @@ TEST(HttpUtility, TestRemoveCookie) {
   EXPECT_EQ(Utility::parseCookieValue(headers, target_key2), "");
   EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key1), "\"somevalue");
   EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key2), "finalvalue");
+
+  TestRequestHeaderMapImpl single_cookie_headers{{"cookie", "key2=remove;"}};
+
+  Utility::removeCookie(single_cookie_headers, target_key2);
+  EXPECT_EQ(single_cookie_headers, {});
+  // To test with empty cookie list
+  Utility::removeCookie(single_cookie_headers, target_key2);
+  EXPECT_EQ(single_cookie_headers, {});
 }
 
 TEST(HttpUtility, SendLocalReply) {
