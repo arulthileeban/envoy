@@ -394,8 +394,6 @@ TEST_F(ExtractorTest, TestCookieToken) {
     tokens[0]->removeJwt(headers);
     tokens[1]->removeJwt(headers);
     tokens[2]->removeJwt(headers);
-    Http::Utility::QueryParamsMulti query_params =
-        Http::Utility::QueryParamsMulti::parseAndDecodeQueryString(headers.getPathValue());
     EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie"), "token-cookie-value");
     EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-2"), "token-cookie-value-2");
     EXPECT_EQ(Http::Utility::parseCookieValue(headers, "token-cookie-3"), "token-cookie-value-3");

@@ -929,6 +929,36 @@ TEST(HttpUtility, TestParseCookiesDuplicates) {
   EXPECT_EQ(cookies.at("b"), "1");
 }
 
+TEST(HttpUtility, TestRemoveCookie) {
+  TestRequestHeaderMapImpl headers{
+      {"someheader", "10.0.0.1"},
+      {"cookie", "somekey=\"somevalue\"; someotherkey=someothervalue; finalkey=finalvalue"},
+      {"cookie", "key2=value2;"}};
+
+  const auto& cookies = Utility::parseCookies(headers);
+  std::pair<std::string, std::string> target_cookie{"someotherkey", "someothervalue"};
+  std::pair<std::string, std::string> non_target_cookie{"somekey", "\"somevalue\""};
+  auto cookie_value = headers.get(Http::Headers::get().Cookie)[0]->value().getStringView();
+
+  EXPECT_EQ(Utility::parseCookieValue(headers, target_cookie.first), target_cookie.second);
+  // parseCookieValue() strips quotes, hence checking the cookie header directly
+  EXPECT_NE(cookie_value.find(non_target_cookie.second), std::string::npos);
+
+  Utility::removeCookie(headers, target_cookie.first);
+  cookie_value = headers.get(Http::Headers::get().Cookie)[0]->value().getStringView();
+
+  EXPECT_EQ(Utility::parseCookieValue(headers, target_cookie.first), "");
+  EXPECT_NE(cookie_value.find(non_target_cookie.second), std::string::npos);
+
+  TestRequestHeaderMapImpl single_cookie_headers{{"cookie", "key2=remove;"}};
+  std::pair<std::string, std::string> target_cookie2{"key2", "value2"};
+
+  Utility::removeCookie(single_cookie_headers, target_cookie2.first);
+  EXPECT_EQ(single_cookie_headers, TestRequestHeaderMapImpl{});
+  Utility::removeCookie(single_cookie_headers, target_cookie2.first);
+  EXPECT_EQ(single_cookie_headers, TestRequestHeaderMapImpl{});
+}
+
 TEST(HttpUtility, TestParseSetCookieWithQuotes) {
   TestRequestHeaderMapImpl headers{
       {"someheader", "10.0.0.1"},
@@ -981,39 +1011,6 @@ TEST(HttpUtility, TestMakeSetCookieValue) {
   EXPECT_EQ("name=\"value\"; Path=/; SameSite=None; Secure; Partitioned; HttpOnly",
             Utility::makeSetCookieValue("name", "value", "/", std::chrono::seconds::zero(), true,
                                         ref_attributes));
-}
-
-TEST(HttpUtility, TestRemoveCookie) {
-  TestRequestHeaderMapImpl headers{
-      {"someheader", "10.0.0.1"},
-      {"cookie", "somekey=\"somevalue; someotherkey=someothervalue; finalkey=finalvalue"},
-      {"cookie", "key2=value2; key2=\"value3"}};
-
-  const auto& cookies = Utility::parseCookies(headers);
-  std::string target_key1{"someotherkey"};
-  std::string target_key2{"key2"};
-  std::string non_target_key1{"somekey"};
-  std::string non_target_key2{"finalkey"};
-
-  EXPECT_NE(Utility::parseCookieValue(headers, target_key1), "");
-  EXPECT_NE(Utility::parseCookieValue(headers, target_key2), "");
-  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key1), "");
-  EXPECT_NE(Utility::parseCookieValue(headers, non_target_key2), "");
-
-  Utility::removeCookie(headers, target_key1);
-  Utility::removeCookie(headers, target_key2);
-  EXPECT_EQ(Utility::parseCookieValue(headers, target_key1), "");
-  EXPECT_EQ(Utility::parseCookieValue(headers, target_key2), "");
-  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key1), "\"somevalue");
-  EXPECT_EQ(Utility::parseCookieValue(headers, non_target_key2), "finalvalue");
-
-  TestRequestHeaderMapImpl single_cookie_headers{{"cookie", "key2=remove;"}};
-
-  Utility::removeCookie(single_cookie_headers, target_key2);
-  EXPECT_EQ(single_cookie_headers, {});
-  // To test with empty cookie list
-  Utility::removeCookie(single_cookie_headers, target_key2);
-  EXPECT_EQ(single_cookie_headers, {});
 }
 
 TEST(HttpUtility, SendLocalReply) {

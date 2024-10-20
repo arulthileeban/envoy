@@ -300,7 +300,7 @@ bool maybeAdjustForIpv6(absl::string_view absolute_url, uint64_t& offset, uint64
 }
 
 void forEachCookie(
-    const HeaderMap& headers, const LowerCaseString& cookie_header,
+    const HeaderMap& headers, const LowerCaseString& cookie_header, bool strip_double_quotes,
     const std::function<bool(absl::string_view, absl::string_view)>& cookie_consumer) {
   const Http::HeaderMap::GetResult cookie_headers = headers.get(cookie_header);
 
@@ -320,10 +320,12 @@ void forEachCookie(
       absl::string_view k = s.substr(first_non_space, equals_index - first_non_space);
       absl::string_view v = s.substr(equals_index + 1, s.size() - 1);
 
-      // Cookie values may be wrapped in double quotes.
-      // https://tools.ietf.org/html/rfc6265#section-4.1.1
-      if (v.size() >= 2 && v.back() == '"' && v[0] == '"') {
-        v = v.substr(1, v.size() - 2);
+      if (strip_double_quotes) {
+        // Cookie values may be wrapped in double quotes.
+        // https://tools.ietf.org/html/rfc6265#section-4.1.1
+        if (v.size() >= 2 && v.back() == '"' && v[0] == '"') {
+          v = v.substr(1, v.size() - 2);
+        }
       }
 
       if (!cookie_consumer(k, v)) {
@@ -338,15 +340,16 @@ std::string parseCookie(const HeaderMap& headers, const std::string& key,
   std::string value;
 
   // Iterate over each cookie & return if its value is not empty.
-  forEachCookie(headers, cookie, [&key, &value](absl::string_view k, absl::string_view v) -> bool {
-    if (key == k) {
-      value = std::string{v};
-      return false;
-    }
+  forEachCookie(headers, cookie, true,
+                [&key, &value](absl::string_view k, absl::string_view v) -> bool {
+                  if (key == k) {
+                    value = std::string{v};
+                    return false;
+                  }
 
-    // continue iterating until a cookie that matches `key` is found.
-    return true;
-  });
+                  // continue iterating until a cookie that matches `key` is found.
+                  return true;
+                });
 
   return value;
 }
@@ -361,7 +364,7 @@ Utility::parseCookies(const RequestHeaderMap& headers,
                       const std::function<bool(absl::string_view)>& key_filter) {
   absl::flat_hash_map<std::string, std::string> cookies;
 
-  forEachCookie(headers, Http::Headers::get().Cookie,
+  forEachCookie(headers, Http::Headers::get().Cookie, true,
                 [&cookies, &key_filter](absl::string_view k, absl::string_view v) -> bool {
                   if (key_filter(k)) {
                     cookies.emplace(k, v);
@@ -381,7 +384,7 @@ void Utility::removeCookie(RequestHeaderMap& headers, const std::string& cookie_
   }
 
   std::string new_cookie_value;
-  forEachCookie(headers, cookie_header,
+  forEachCookie(headers, cookie_header, false,
                 [&cookie_key, &new_cookie_value](absl::string_view k, absl::string_view v) -> bool {
                   if (cookie_key != k) {
                     new_cookie_value += absl::StrCat(k, "=", v, "; ");
