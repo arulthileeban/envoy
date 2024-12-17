@@ -41,6 +41,7 @@ Bencoded
 CIO
 cbegin
 cend
+constness
 deadcode
 DFP
 Dynatrace
@@ -335,6 +336,7 @@ ODCDS
 middlewildcard
 monostate
 mpd
+msan
 mutators
 mybucket
 myobject
